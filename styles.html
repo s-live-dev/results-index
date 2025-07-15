@@ -1,0 +1,430 @@
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    //font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+    font-family: 'BIZ UDPGothic', sans-serif;
+    line-height: 1.1;
+    //background: linear-gradient(135deg, #2d1b69 0%, #11998e 100%);
+    background: linear-gradient(270deg, #1e2569, #19115d, #2b1364, #2d0535);
+    color: #ffffff;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 20px 80px 20px;
+  }
+
+  .header {
+    text-align: center;
+    color: white;
+    padding: 20px;
+  }
+
+  .header h1 {
+    font-size: 2.5em;
+  }
+
+  .qr-section {
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  #header-qr {
+    height: 4vh;
+    opacity: 0.8;
+  }
+  .header p {
+    font-size: 1.2em;
+    opacity: 0.9;
+  }
+
+  .tournament-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+  }
+
+  .tournament-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .tournament-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .tournament-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+  }
+
+  .card-content {
+    padding: 25px;
+  }
+
+  .tournament-title {
+    font-size: 1.4em;
+    font-weight: bold;
+    color: #ffffff;
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    padding-bottom: 10px;
+    display: flex;
+    /* 追加 */
+    align-items: center;
+    /* 追加 */
+  }
+
+  .association-icon {
+    height: 1.6em;
+    /* フォントサイズに合わせた高さ */
+    width: 1.6em;
+    /* 高さと合わせて正円を維持 */
+    border-radius: 50%;
+    /* 正円にする */
+    margin-right: 12px;
+    /* アイコンと大会名の間の余白 */
+    object-fit: cover;
+    /* 画像がコンテナに収まるように調整 */
+    background-color: rgba(255, 255, 255, 0.1);
+    /* 画像読み込み失敗時の背景 */
+  }
+
+  .tournament-info {
+    margin-bottom: 20px;
+  }
+
+  .info-row {
+    display: flex;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+
+  .info-value {
+    color: #e8e8e8;
+    font-size: 1.1em;
+    font-weight: 700;
+  }
+
+  .weather-section {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+  }
+
+  .weather-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+    gap: 8px;
+    color: #d0d0d0;
+    font-weight: 700;
+    font-size: 0.8em;
+  }
+
+  /* アイコンのスタイルを追加 */
+  .weather-info i {
+    margin-right: 0px;
+    /* アイコンとテキストの余白 */
+    width: 20px;
+    /* アイコンの表示領域を固定し、テキストの開始位置を揃える */
+    text-align: center;
+    color: #e0e0e0;
+  }
+
+  .status-section {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    padding: 15px;
+    border-radius: 12px;
+    /* margin-bottom: 15px; */
+  }
+
+  /* status-item はコンテナとしての役割に */
+  .status-item {
+    /* 具体的なスタイルは子要素へ移譲 */
+  }
+
+  /* 画像とテキストを横並びにするためのFlexbox設定 */
+  .status-item-row {
+    display: flex;
+    align-items: center;
+    /* 上下中央揃え */
+    margin-bottom: 8px;
+    /* 各行の余白 */
+  }
+
+  .status-item-row:last-child {
+    margin-bottom: 0;
+  }
+
+  /* 種目画像のスタイル */
+  .event-badge-img {
+    height: 1.1em;
+    border-radius: 8px;
+    margin-right: 8px;
+  }
+
+  /* 画像がない場合のテキストのスタイル（フォールバック用） */
+  .event-badge-text {
+    display: inline-block;
+    background-color: rgba(178, 25, 227, 0.5);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 1.1vh;
+    margin-right: 8px;
+    text-transform: uppercase;
+  }
+
+  .event-code {
+    background-color: rgba(0, 0, 0, 0.4);
+    color: #d0d0d0;
+    font-size: 0.65em;
+    padding: 2px 8px;
+    border-radius: 8px;
+    margin-right: 8px;
+    border-style: solid;
+    border-width: 1px;
+    border-color: rgba(255,255,255,0.7);
+  }
+
+  /* 状況テキストのスタイル */
+  .status-text {
+    color: #ffffff;
+    font-size: 1.0em;
+    line-height: 1;
+  }
+
+  .status-icon {
+    margin-right: 8px;
+    /* 右隣のテキストとの余白 */
+    color: #e0e0e0;
+    /* アイコンの色 */
+    width: 1.1em;
+    /* アイコンの占める幅を固定して、テキストの開始位置を揃える */
+    text-align: center;
+  }
+
+  /* 新しいコンテナのスタイル */
+  .status-and-link-container {
+    display: flex;
+    /* Flexboxを有効化 */
+    align-items: stretch;
+    /* 子要素の高さを揃える */
+    border-radius: 12px;
+    /* 全体の角を丸める */
+    overflow: hidden;
+    /* 角丸を子要素にも適用 */
+    background: rgba(255, 255, 255, 0.15);
+    /* 共通の背景色 */
+  }
+
+  /* status-sectionの調整 */
+  .status-section {
+    flex-grow: 1;
+    /* 残りのスペースをすべて埋める */
+    background: transparent;
+    /* 背景は親コンテナに任せる */
+    border: none;
+    margin-bottom: 0;
+    /* 親コンテナがマージンを管理 */
+    border-radius: 0;
+    /* 角丸は親に任せる */
+    padding: 15px;
+  }
+
+  /* click-indicatorのスタイルを全面的に変更 */
+  .click-indicator {
+    position: static;
+    /* absoluteを解除 */
+    flex: 0 0 60px;
+    /* 幅を60pxに固定 */
+    background: rgba(0, 0, 0, 0.5);
+    /* 少し濃い背景色 */
+
+    /* アイコンを中央に配置するためのFlexbox設定 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* 円形から四角形にするためリセット */
+    border-radius: 0;
+    width: auto;
+    height: auto;
+
+    transition: background 0.3s ease;
+  }
+
+  /* ホバー時の効果は親のカードに集約 */
+  .tournament-card:hover .click-indicator {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  /* インジケーター内のアイコンのスタイル */
+  .click-indicator i {
+    font-size: 1.5em;
+    color: #ffffff;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #e8e8e8;
+  }
+
+  .loading::after {
+    content: '...';
+    animation: dots 1.5s steps(5, end) infinite;
+  }
+
+  @keyframes dots {
+
+    0%,
+    20% {
+      content: '.';
+    }
+
+    40% {
+      content: '..';
+    }
+
+    60% {
+      content: '...';
+    }
+
+    80%,
+    100% {
+      content: '';
+    }
+  }
+
+  .error-message {
+    text-align: center;
+    padding: 40px;
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    margin: 20px 0;
+  }
+
+  .error-message h3 {
+    margin-bottom: 10px;
+  }
+
+  .retry-button {
+    margin-top: 15px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  .retry-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .empty-message {
+    text-align: center;
+    padding: 40px;
+    color: #e8e8e8;
+  }
+
+  /* スマートフォン対応の調整 - より広いブレークポイントに変更 */
+  @media (max-width: 900px) {
+    .tournament-grid {
+      grid-template-columns: 1fr !important;
+      gap: 15px;
+    }
+    
+    .container {
+      padding: 15px 15px 120px 15px;
+    }
+
+    .header h1 {
+      font-size: 2em;
+    }
+
+    .card-content {
+      padding: 20px;
+    }
+
+    #header-qr {
+      height: 5vh;
+      min-height: 40px;
+    }
+  }
+
+  /* より小さい画面での追加調整 */
+  @media (max-width: 480px) {
+    .container {
+      padding: 10px 10px 150px 10px;
+    }
+    
+    .header {
+      padding: 20px;
+    }
+    
+    .header h1 {
+      font-size: 1.8em;
+    }
+    
+    .card-content {
+      padding: 15px;
+    }
+    
+    .tournament-title {
+      font-size: 1.2em;
+    }
+    
+    .weather-info {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+      font-weight: 700;
+      font-size: 0.8em;
+    }
+    
+    .weather-info i {
+      width: 16px;
+    }
+
+    #header-qr {
+      height: 4vh;
+      min-height: 35px;
+    }
+  }
+
+  /* iframe内での表示専用の調整 */
+  @media (max-width: 1000px) {
+    .tournament-grid {
+      grid-template-columns: 1fr !important;
+    }
+  }
+</style>

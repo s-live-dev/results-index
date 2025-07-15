@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>S-LIVE Results/Index</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <?!= HtmlService.createHtmlOutputFromFile('styles').getContent(); ?>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>S-LIVE Results/Index</h1>
+    </div>
+    <div class="qr-section">
+      <img id="header-qr" src="https://api.qrserver.com/v1/create-qr-code/?data=https%3A%2F%2Fs-live.org%2Fridx&amp;format=png&amp;margin=10&amp;size=150x150" alt="QR Code">
+    </div>
+    <div id="tournaments-container">
+      <div class="loading">Loading</div>
+    </div>
+  </div>
+
+  <script>
+    // ... (groupByTournament, formatDate, showError, showLoading, getEventImageUrlは変更なし) ...
+    function groupByTournament(data) {
+        const grouped = {};
+        data.forEach(event => {
+            const tournamentId = event['大会番号'];
+            if (!grouped[tournamentId]) {
+                grouped[tournamentId] = [];
+            }
+            grouped[tournamentId].push(event);
+        });
+        return grouped;
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '未定';
+        
+        try {
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return '未定';
+            
+            return date.toLocaleDateString('ja-JP', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'short'
+            });
+        } catch (error) {
+            console.error('日付フォーマットエラー:', error);
+            return '未定';
+        }
+    }
+
+    function showError(message) {
+        const container = document.getElementById('tournaments-container');
+        container.innerHTML = `
+            <div class="error-message">
+                <h3>Error</h3>
+                <p>${message}</p>
+                <button class="retry-button" onclick="loadTournaments()">
+                    Retrying
+                </button>
+            </div>
+        `;
+    }
+
+    function showLoading() {
+        const container = document.getElementById('tournaments-container');
+        container.innerHTML = `
+            <div class="loading">
+                Loading
+            </div>
+        `;
+    }
+    
+    function generateTournamentsHTML(data) {
+        if (!data || data.length === 0) {
+            return `<div class="empty-message"><h3>データがありません</h3><p>大会データが見つかりませんでした。</p></div>`;
+        }
+
+        const grouped = groupByTournament(data);
+        const sortedTournaments = Object.values(grouped).sort((a, b) => new Date(b[0]['開催日']) - new Date(a[0]['開催日']));
+
+        let html = '<div class="tournament-grid">';
+        sortedTournaments.forEach(events => {
+            const tournament = events[0];
+            const getEventImageUrl = (eventName) => {
+                const upperCaseEventName = eventName.toUpperCase();
+                if (upperCaseEventName.includes('トラップ')) return 'https://s-live.org/wp-content/plugins/s-live/resource/TRAP.png';
+                if (upperCaseEventName.includes('スキート')) return 'https://s-live.org/wp-content/plugins/s-live/resource/SKEET.png';
+                return '';
+            };
+            const getStatusIcon = (status) => {
+                // status の前後の空白を削除して完全一致で判定
+                switch ((status || '').trim()) {
+                  case '競技前':
+                    return '<i class="fa-regular fa-circle-pause status-icon"></i>';
+                  case '競技中':
+                    return '<i class="fa-regular fa-circle-play status-icon"></i>';
+                  case '競技終了':
+                    return '<i class="fa-regular fa-circle-check status-icon"></i>';
+                  case '1日目終了':
+                    return '<i class="fa-regular fa-circle-pause status-icon"></i>';
+                  default:
+                    // 上記のいずれにも当てはまらない場合のデフォルトアイコン
+                    return '<i class="fa-solid fa-circle-info status-icon"></i>'; 
+                }
+            };
+
+            const statusList = events.map(event => {
+                const imageUrl = getEventImageUrl(event['種目'] || '');
+                const imageTag = imageUrl ? `<img src="${imageUrl}" class="event-badge-img">` : `<span class="event-badge-text">${event['種目'] || '種目不明'}</span>`;
+                
+                const eventCodeHTML = event['種目コード'] ? `<span class="event-code">${event['種目コード']}</span>` : '';
+                const statusIconHTML = getStatusIcon(event['状況']); // 状況アイコンを取得
+
+                return `<div class="status-item-row">${imageTag}${eventCodeHTML}${statusIconHTML}<span class="status-text">${event['状況'] || '状況不明'}</span></div>`;
+            }).join('');
+
+            html += `
+                <div class="tournament-card" onclick="openResult('${tournament['リザルトURL'] || '#'}')">
+                    <div class="card-content">
+                        <div class="tournament-title">
+                            ${tournament['主催協会'] ? `<img src="https://s-live.org/wp-content/plugins/s-live/resource/flag/${tournament['主催協会']}.png" class="association-icon" alt="${tournament['主催協会']} icon">` : ''}
+                            <span>${tournament['大会名'] || '大会名不明'}</span>
+                        </div>
+                        <div class="tournament-info">
+                            <div class="info-row"><span class="info-value">${formatDate(tournament['開催日'])}</span></div>
+                            <div class="info-row"><span class="info-value">${tournament['射撃場名'] || '未定'}</span></div>
+                        </div>
+                        <div class="weather-section">
+                            <div class="weather-info">
+                                <div><i class="fa-solid fa-sun"></i> ${tournament['天候'] || '未記録'}</div>
+                                <div><i class="fa-solid fa-temperature-half"></i> ${tournament['気温'] ? tournament['気温'] + '°C' : '未記録'}</div>
+                                <div><i class="fa-solid fa-wind"></i> ${tournament['風速'] ? tournament['風速'] + 'm/s' : '未記録'}</div>
+                            </div>
+                        </div>
+
+                        <div class="status-and-link-container">
+                            <div class="status-section">
+                                <div class="status-item">${statusList}</div>
+                            </div>
+                            <div class="click-indicator">
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            // ★★★ ここまで修正 ★★★
+        });
+        html += '</div>';
+        return html;
+    }
+
+    function openResult(url) {
+        if (url && url.trim() !== '' && url !== '#') {
+            window.open(url, '_blank');
+        } else {
+            alert('リザルトURLが設定されていません');
+        }
+    }
+
+    function loadTournaments() {
+        showLoading();
+        google.script.run
+            .withSuccessHandler(data => {
+                if (data && Array.isArray(data)) {
+                    displayTournaments(data);
+                } else {
+                    showError('データを受信できませんでした');
+                }
+            })
+            .withFailureHandler(error => showError('データの読み込みに失敗しました: ' + error.message))
+            .getTournamentData();
+    }
+
+    function displayTournaments(data) {
+        document.getElementById('tournaments-container').innerHTML = generateTournamentsHTML(data);
+    }
+
+    document.addEventListener('DOMContentLoaded', loadTournaments);
+  </script>
+</body>
+
+</html>
