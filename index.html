@@ -30,7 +30,6 @@
   </div>
 
   <script>
-    // ... (groupByTournament, formatDate, showError, showLoading, getEventImageUrlは変更なし) ...
     function groupByTournament(data) {
         const grouped = {};
         data.forEach(event => {
@@ -90,7 +89,21 @@
         }
 
         const grouped = groupByTournament(data);
-        const sortedTournaments = Object.values(grouped).sort((a, b) => new Date(b[0]['開催日']) - new Date(a[0]['開催日']));
+        const sortedTournaments = Object.values(grouped).sort((a, b) => {
+            // 開催日での比較（新しい順）
+            const dateA = new Date(a[0]['開催日']);
+            const dateB = new Date(b[0]['開催日']);
+            const dateDiff = dateB - dateA;
+            
+            // 開催日が同じ場合は大会名で比較（昇順）
+            if (dateDiff === 0) {
+                const nameA = a[0]['大会名'] || '';
+                const nameB = b[0]['大会名'] || '';
+                return nameA.localeCompare(nameB, 'ja');
+            }
+            
+            return dateDiff;
+        });
 
         let html = '<div class="tournament-grid">';
         sortedTournaments.forEach(events => {
@@ -158,7 +171,6 @@
                     </div>
                 </div>
             `;
-            // ★★★ ここまで修正 ★★★
         });
         html += '</div>';
         return html;
